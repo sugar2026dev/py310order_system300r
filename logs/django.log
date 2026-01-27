@@ -1,0 +1,14 @@
+Performing system checks...
+
+前端目录: /opt/order_system/frontend
+媒体目录: /opt/order_system/backend/media
+System check identified no issues (0 silenced).
+January 24, 2026 - 17:15:54
+Django version 3.2.25, using settings 'django_project.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+Python路径设置:
+  1. /opt/order_system/backend/django_project
+  2. /opt/order_system/backend/apps
+  3. /opt/order_system/backend
+Error: That port is already in use.

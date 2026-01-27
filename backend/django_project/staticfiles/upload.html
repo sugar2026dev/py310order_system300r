@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片上传</title>
+    <!-- 添加配置脚本 -->
+    <script src="./js/config.js"></script>
+    <script src="./js/lib/vue/vue.global.prod.js"></script>
+    <script src="./js/lib/axios/axios.min.js"></script>
+    <script src="./js/lib/element-plus/index.full.js"></script>
+<!--    <link rel="stylesheet" href="./js/lib/font-awesome/css/all.min.css">-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/upload.css">
+    <link rel="icon" href="data:,">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>订单图片上传</h1>
+            <p>简单、快速、安全的订单截图上传服务</p>
+        </div>
+
+        <div class="user-info">
+            <div class="user-details">
+                <div class="user-icon" id="userIcon">U</div>
+                <div class="user-text">
+                    <span class="username" id="username">加载中...</span>
+                    <span class="user-type" id="userType">普通用户</span>
+                </div>
+            </div>
+            <button class="btn btn-logout" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i> 退出登录
+            </button>
+        </div>
+
+        <!-- 上传区域 - 显示状态和结果 -->
+        <div class="upload-area" id="uploadArea">
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+
+            <!-- 初始上传提示 -->
+            <div class="upload-prompt" id="uploadPrompt">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h3>点击或拖拽上传订单截图</h3>
+                <p>支持 JPG, PNG 格式，最大 5MB</p>
+            </div>
+
+            <!-- 文件已选择状态 -->
+            <div class="upload-selected" id="uploadSelected" style="display: none;">
+                <div class="selected-icon">
+                    <i class="fas fa-file-image"></i>
+                </div>
+                <div class="selected-info">
+                    <div class="selected-header">
+                        <span class="selected-name" id="selectedFileName">未选择文件</span>
+                        <button class="btn btn-change-file" id="changeFileBtn">
+                            <i class="fas fa-redo"></i> 更换
+                        </button>
+                    </div>
+                    <div class="selected-meta">
+                        <span class="file-size" id="fileSize">0 KB</span>
+                        <span class="file-status" id="fileStatus">准备就绪</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 上传进度 -->
+            <div class="upload-progress" id="uploadProgress" style="display: none;">
+                <div class="progress-icon">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <div class="progress-info">
+                    <div class="progress-header">
+                        <h4>正在识别订单信息...</h4>
+                        <div class="progress-percent" id="progressPercent">0%</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p class="progress-tip">请勿关闭页面，识别通常需要5-10秒</p>
+                </div>
+            </div>
+
+            <!-- OCR识别失败状态 -->
+            <div class="upload-ocr-failed" id="uploadOcrFailed" style="display: none;">
+                <div class="ocr-failed-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="ocr-failed-content">
+                    <h3 id="ocrFailedTitle">识别失败</h3>
+                    <p class="ocr-failed-message" id="ocrFailedMessage">未识别到订单编号</p>
+                    <p class="ocr-failed-tip" id="ocrFailedTip">请重新上传清晰的订单截图</p>
+                </div>
+            </div>
+
+            <!-- 识别结果 -->
+            <div class="upload-result" id="uploadResult" style="display: none;">
+                <div class="result-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="result-content">
+                    <h3 id="resultTitle">识别成功</h3>
+                    <div class="result-order">
+                        <span class="result-label">订单编号：</span>
+                        <span class="result-code" id="resultOrderCode">-</span>
+                    </div>
+                    <p class="result-message" id="resultMessage">订单信息已保存到系统</p>
+                </div>
+            </div>
+
+            <!-- 错误结果 -->
+            <div class="upload-error" id="uploadError" style="display: none;">
+                <div class="error-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="error-content">
+                    <h3 id="errorTitle">识别失败</h3>
+                    <div class="error-order">
+                        <span class="error-label">订单编号：</span>
+                        <span class="error-code" id="errorOrderCode">-</span>
+                    </div>
+                    <p class="error-message" id="errorMessage">订单信息处理失败</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图片预览区域 -->
+        <div class="preview-area" id="previewArea" style="display: none;">
+            <div class="preview-header">
+                <h3><i class="fas fa-image"></i> 图片预览</h3>
+            </div>
+            <div class="preview-container">
+                <img id="preview" alt="预览图片" class="preview-image">
+            </div>
+        </div>
+
+        <!-- 操作按钮区域 -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" id="uploadBtn" disabled>
+                <i class="fas fa-upload"></i> 开始识别
+            </button>
+            <button class="btn btn-secondary" id="cancelBtn" style="display: none;">
+                <i class="fas fa-times"></i> 取消
+            </button>
+            <button class="btn btn-success" id="nextBtn" style="display: none;">
+                <i class="fas fa-plus"></i> 上传新订单
+            </button>
+        </div>
+
+        <div class="permission-note">
+            <p>
+                <i class="fas fa-info-circle"></i>
+                注意：普通用户只能上传订单截图
+            </p>
+        </div>
+    </div>
+
+    <script src="./js/upload.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>直接OCR测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .upload-area {
+            border: 2px dashed #007bff;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover {
+            background: #e9f5ff;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>直接OCR测试</h1>
+    <p>这个页面直接测试Django的OCR接口，绕过复杂的JavaScript逻辑。</p>
+    
+    <div class="container">
+        <h2>测试方法1: 通过Django接口</h2>
+        <div class="upload-area" id="uploadArea1">
+            点击选择图片或拖放到这里<br>
+            <small>(通过Django: /api/simple-ocr-upload/)</small>
+        </div>
+        <input type="file" id="fileInput1" accept="image/*" style="display:none;">
+        <button onclick="document.getElementById('fileInput1').click()">选择图片</button>
+        
+        <h2>测试方法2: 直接Flask接口</h2>
+        <div class="upload-area" id="uploadArea2">
+            点击选择图片或拖放到这里<br>
+            <small>(直接Flask: http://127.0.0.1:5000/pic)</small>
+        </div>
+        <input type="file" id="fileInput2" accept="image/*" style="display:none;">
+        <button onclick="document.getElementById('fileInput2').click()">选择图片</button>
+        
+        <div class="result" id="result">
+            结果将显示在这里...
+        </div>
+    </div>
+    
+    <script>
+        function uploadToDjango(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            document.getElementById('result').innerHTML = '<p>正在上传到Django接口...</p>';
+            
+            fetch('/api/simple-ocr-upload/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Django响应状态:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Django响应数据:', data);
+                displayResult('Django接口', data);
+            })
+            .catch(error => {
+                console.error('Django错误:', error);
+                document.getElementById('result').innerHTML = 
+                    `<p class="error">Django接口错误: ${error.message}</p>`;
+            });
+        }
+        
+        function uploadToFlask(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            document.getElementById('result').innerHTML = '<p>正在上传到Flask接口...</p>';
+            
+            fetch('http://127.0.0.1:5000/pic', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Flask响应状态:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Flask响应数据:', data);
+                displayResult('Flask接口', data);
+            })
+            .catch(error => {
+                console.error('Flask错误:', error);
+                document.getElementById('result').innerHTML = 
+                    `<p class="error">Flask接口错误: ${error.message}</p>`;
+            });
+        }
+        
+        function displayResult(source, data) {
+            let html = `<h3>${source}结果:</h3>`;
+            
+            if (data.success) {
+                html += `<p class="success">✅ ${data.message}</p>`;
+                html += `<p>订单编号: <strong>${data.data['订单编号']}</strong></p>`;
+                html += `<p>商品名称: ${data.data['商品名称']}</p>`;
+                html += `<p>收件人: ${data.data['收件人']}</p>`;
+                html += `<p>提取字段数: ${data.extracted_count}</p>`;
+            } else {
+                html += `<p class="error">❌ 识别失败: ${data.error || '未知错误'}</p>`;
+            }
+            
+            html += `<p><small>时间戳: ${data.timestamp}</small></p>`;
+            
+            document.getElementById('result').innerHTML = html;
+        }
+        
+        // 设置文件上传处理
+        document.getElementById('fileInput1').addEventListener('change', function(e) {
+            if (this.files.length > 0) {
+                uploadToDjango(this.files[0]);
+            }
+        });
+        
+        document.getElementById('fileInput2').addEventListener('change', function(e) {
+            if (this.files.length > 0) {
+                uploadToFlask(this.files[0]);
+            }
+        });
+        
+        // 设置拖放功能
+        [document.getElementById('uploadArea1'), document.getElementById('uploadArea2')].forEach((area, index) => {
+            area.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.background = '#e9f5ff';
+            });
+            
+            area.addEventListener('dragleave', function(e) {
+                this.style.background = '';
+            });
+            
+            area.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.background = '';
+                
+                if (e.dataTransfer.files.length > 0) {
+                    const file = e.dataTransfer.files[0];
+                    if (file.type.startsWith('image/')) {
+                        if (index === 0) {
+                            uploadToDjango(file);
+                        } else {
+                            uploadToFlask(file);
+                        }
+                    } else {
+                        alert('请选择图片文件');
+                    }
+                }
+            });
+            
+            area.addEventListener('click', function() {
+                if (index === 0) {
+                    document.getElementById('fileInput1').click();
+                } else {
+                    document.getElementById('fileInput2').click();
+                }
+            });
+        });
+        
+        console.log('直接OCR测试页面加载完成');
+    </script>
+</body>
+</html>

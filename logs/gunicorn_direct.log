@@ -1,0 +1,15 @@
+nohup: 忽略输入
+Traceback (most recent call last):
+  File "/opt/order_system/venv/bin/gunicorn", line 3, in <module>
+    from gunicorn.app.wsgiapp import run
+  File "/opt/order_system/venv/lib/python3.10/site-packages/gunicorn/app/wsgiapp.py", line 8, in <module>
+    from gunicorn.app.base import Application
+  File "/opt/order_system/venv/lib/python3.10/site-packages/gunicorn/app/base.py", line 11, in <module>
+    from gunicorn.arbiter import Arbiter
+  File "/opt/order_system/venv/lib/python3.10/site-packages/gunicorn/arbiter.py", line 15, in <module>
+    from gunicorn import sock, systemd, util
+  File "/opt/order_system/venv/lib/python3.10/site-packages/gunicorn/sock.py", line 8, in <module>
+    import ssl
+  File "/usr/local/lib/python3.10/ssl.py", line 99, in <module>
+    import _ssl             # if we can't import it, let the error propagate
+ModuleNotFoundError: No module named '_ssl'

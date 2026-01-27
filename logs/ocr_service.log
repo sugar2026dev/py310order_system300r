@@ -1,0 +1,54 @@
+nohup: 忽略输入
+ * Serving Flask app 'picture_orc'
+ * Debug mode: on
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.21.90.89:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 138-112-640
+INFO:werkzeug:127.0.0.1 - - [26/Jan/2026 12:33:42] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [26/Jan/2026 12:34:17] "GET / HTTP/1.1" 200 -
+ERROR:__main__:OCR处理失败: cannot identify image file '/opt/order_system/backend/temp/pdd_1769402057_50fa4d22.jpg'
+Traceback (most recent call last):
+  File "/opt/order_system/backend/picture_orc.py", line 642, in pic
+    image = Image.open(image_path)
+  File "/opt/order_system/venv/lib/python3.10/site-packages/PIL/Image.py", line 3579, in open
+    raise UnidentifiedImageError(msg)
+PIL.UnidentifiedImageError: cannot identify image file '/opt/order_system/backend/temp/pdd_1769402057_50fa4d22.jpg'
+INFO:werkzeug:127.0.0.1 - - [26/Jan/2026 12:34:17] "[35m[1mPOST /pic HTTP/1.1[0m" 500 -
+INFO:werkzeug:127.0.0.1 - - [26/Jan/2026 12:34:17] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [26/Jan/2026 12:34:27] "GET / HTTP/1.1" 200 -
+ERROR:__main__:OCR处理失败: cannot identify image file '/opt/order_system/backend/temp/pdd_1769402067_901dfcbf.jpg'
+Traceback (most recent call last):
+  File "/opt/order_system/backend/picture_orc.py", line 642, in pic
+    image = Image.open(image_path)
+  File "/opt/order_system/venv/lib/python3.10/site-packages/PIL/Image.py", line 3579, in open
+    raise UnidentifiedImageError(msg)
+PIL.UnidentifiedImageError: cannot identify image file '/opt/order_system/backend/temp/pdd_1769402067_901dfcbf.jpg'
+INFO:werkzeug:127.0.0.1 - - [26/Jan/2026 12:34:27] "[35m[1mPOST /pic HTTP/1.1[0m" 500 -
+INFO:werkzeug:127.0.0.1 - - [26/Jan/2026 12:34:27] "GET / HTTP/1.1" 200 -
+ERROR:__main__:OCR处理失败: unterminated character set at position 0
+Traceback (most recent call last):
+  File "/opt/order_system/backend/picture_orc.py", line 658, in pic
+    extracted_data = extract_pdd_order_info(text)
+  File "/opt/order_system/backend/picture_orc.py", line 554, in extract_pdd_order_info
+    clean_text = clean_ocr_text(ocr_text)
+  File "/opt/order_system/backend/picture_orc.py", line 91, in clean_ocr_text
+    line = re.sub(r'[©™®©«»"\'`~|\]', '', line)
+  File "/usr/local/python3.10/lib/python3.10/re.py", line 209, in sub
+    return _compile(pattern, flags).sub(repl, string, count)
+  File "/usr/local/python3.10/lib/python3.10/re.py", line 303, in _compile
+    p = sre_compile.compile(pattern, flags)
+  File "/usr/local/python3.10/lib/python3.10/sre_compile.py", line 788, in compile
+    p = sre_parse.parse(p, flags)
+  File "/usr/local/python3.10/lib/python3.10/sre_parse.py", line 955, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+  File "/usr/local/python3.10/lib/python3.10/sre_parse.py", line 444, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+  File "/usr/local/python3.10/lib/python3.10/sre_parse.py", line 550, in _parse
+    raise source.error("unterminated character set",
+re.error: unterminated character set at position 0
+INFO:werkzeug:127.0.0.1 - - [26/Jan/2026 12:38:08] "[35m[1mPOST /pic?user=test1 HTTP/1.1[0m" 500 -

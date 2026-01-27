@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>订单管理系统</title>
+    <!-- 添加配置脚本 -->
+    <script src="./js/config.js"></script>
+    <link rel="icon" href="data:,">
+    <!-- Element Plus CSS -->
+    <link rel="stylesheet" href="./js/lib/element-plus/index.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入外部CSS -->
+    <link rel="stylesheet" href="./css/index.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- 登录/注册页面 -->
+        <div v-if="!isLoginSuccess" class="auth-container">
+            <div class="container" :class="{ active: isRegisterMode }" id="container">
+                <!-- 登录表单 -->
+                <div class="form-container login-container">
+                    <form @submit.prevent="submitLogin">
+                        <h1>登录</h1>
+                        <p class="subtitle">使用您的用户名称和密码登录</p>
+                        <div class="input-group">
+                            <i class="fa fa-user"></i>
+                            <input v-model="loginForm.username" type="text" placeholder="用户名..."
+                                :class="{ 'error-border': loginErrors.username }">
+                        </div>
+                        <div v-if="loginErrors.username" class="error-message">{{ loginErrors.username }}</div>
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input v-model="loginForm.password" type="password" placeholder="密码..."
+                                :class="{ 'error-border': loginErrors.password }">
+                        </div>
+                        <div v-if="loginErrors.password" class="error-message">{{ loginErrors.password }}</div>
+                        <div class="remember-forgot">
+                            <label>
+                                <input type="checkbox" v-model="loginForm.remember">
+                                记住我
+                            </label>
+                            <a href="#" @click.prevent="showForgotPassword">忘记密码？</a>
+                        </div>
+                        <button type="submit" class="btn">
+                            <i class="fas fa-sign-in-alt"></i> 登录
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 注册表单 -->
+                <div class="form-container register-container">
+                    <form @submit.prevent="submitRegister">
+                        <h1>创建账户</h1>
+                        <p class="subtitle">请填写信息进行注册</p>
+                        <div class="input-group">
+                            <i class="fas fa-user"></i>
+                            <input v-model="registerForm.username" type="text" placeholder="用户名..."
+                                :class="{ 'error-border': registerErrors.username }">
+                        </div>
+                        <div v-if="registerErrors.username" class="error-message">{{ registerErrors.username }}</div>
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input v-model="registerForm.password" type="password" placeholder="输入密码..."
+                                :class="{ 'error-border': registerErrors.password }">
+                        </div>
+                        <div v-if="registerErrors.password" class="error-message">{{ registerErrors.password }}</div>
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input v-model="registerForm.checkPassword" type="password" placeholder="再次输入密码..."
+                                :class="{ 'error-border': registerErrors.checkPassword }">
+                        </div>
+                        <div v-if="registerErrors.checkPassword" class="error-message">{{ registerErrors.checkPassword
+                            }}</div>
+                        <button type="submit" class="btn">
+                            <i class="fas fa-user-plus"></i> 注册
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 切换面板 -->
+                <div class="toggle-container">
+                    <div class="toggle">
+                        <div class="toggle-panel toggle-left">
+                            <h1>已有账户？</h1>
+                            <p>使用您的账户登录，继续使用网站的所有功能</p>
+                            <button class="btn" @click="isRegisterMode = false" id="goToLogin">
+                                <i class="fas fa-arrow-left toggle-arrow"></i> 登录
+                            </button>
+                        </div>
+                        <div class="toggle-panel toggle-right">
+                            <h1>你好，新朋友</h1>
+                            <p>注册您的信息，以使用网站的所有功能</p>
+                            <button class="btn" @click="isRegisterMode = true" id="goToRegister">
+                                注册 <i class="fas fa-arrow-right toggle-arrow"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 订单管理页面 -->
+        <div v-if="isLoginSuccess" class="order-management-wrapper">
+            <el-container class="main-container">
+                <!-- Header -->
+                <el-header class="main-header">
+                    <!-- 移动端菜单按钮 -->
+                    <div class="mobile-menu-toggle" @click="toggleMobileMenu">
+                        <i class="fas fa-bars"></i>
+                    </div>
+
+                    <i class="fas fa-box-open" style="margin-right: 10px;"></i> 订 单 管 理 系 统
+                </el-header>
+
+                <el-container class="content-container">
+                    <!-- 侧边栏 -->
+                    <el-aside width="200px" class="main-sidebar">
+                        <el-menu :default-active="activeIndex" class="sidebar-menu-full"
+                            @select="handleMobileMenuItemClick">
+                            <el-menu-item index="1">
+                                <el-icon>
+                                    <i class="fas fa-ticket"></i>
+                                </el-icon>
+                                <span>订单信息</span>
+                            </el-menu-item>
+                        </el-menu>
+                    </el-aside>
+
+                    <!-- 右侧主要内容 -->
+                    <el-container class="right-content">
+                        <!-- 主内容区域 -->
+                        <el-main class="main-content-scroll">
+                            <!-- 用户信息栏 -->
+                            <div class="user-info-bar">
+                                <span class="user-name">
+                                    用户：{{ currentUser.username }} ({{ currentUser.user_type_name }})
+                                </span>
+                                <el-button class="logout-btn-white" @click="logout" size="small">
+                                    <i class="fas fa-sign-out-alt"></i> 退出登录
+                                </el-button>
+                            </div>
+
+                            <!-- 面包屑导航 -->
+                            <el-breadcrumb style="margin-bottom: 20px;">
+                                <el-breadcrumb-item>首页</el-breadcrumb-item>
+                                <el-breadcrumb-item>订单信息</el-breadcrumb-item>
+                            </el-breadcrumb>
+
+                            <!-- 搜索工具栏 -->
+                            <div class="search-toolbar">
+                                <div class="search-left">
+                                    <!-- 日期选择器 -->
+                                    <el-date-picker v-model="dateRange" type="daterange" range-separator="至"
+                                        start-placeholder="开始日期" end-placeholder="结束日期" class="search-date"
+                                        @change="handleDateChange">
+                                    </el-date-picker>
+
+                                    <!-- 订单号输入框 -->
+                                    <el-input v-model="searchKeyword" placeholder="请输入订单编号" class="search-input"
+                                        @keyup.enter="handleSearch" clearable @clear="handleClearSearch">
+                                    </el-input>
+
+                                    <div class="search-buttons">
+                                        <el-button type="primary" @click="handleSearch">
+                                            <i class="fas fa-search"></i> 查询
+                                        </el-button>
+                                        <el-button type="primary" @click="getAllOrders">
+                                            <i class="fas fa-list"></i> 全部
+                                        </el-button>
+                                        <el-button type="primary" @click="showAddDialog">
+                                            <i class="fas fa-plus"></i> 添加
+                                        </el-button>
+                                    </div>
+                                </div>
+
+                                <div class="search-right">
+                                    <el-button type="primary" @click="exportToExcel" :loading="exportLoading">
+                                        <i class="fas fa-file-excel"></i> 导出Excel
+                                    </el-button>
+                                </div>
+                            </div>
+
+                            <!-- 表格统计信息 -->
+                            <div class="table-summary">
+                                <div class="summary-info">
+                                    <span class="total-count">共 <strong>{{ total }}</strong> 条数据</span>
+                                    <span class="current-range">
+                                        当前显示: 第 <strong>{{ (currentPage - 1) * pageSize + 1 }}</strong> 到
+                                        <strong>{{ Math.min(currentPage * pageSize, total) }}</strong> 条
+                                    </span>
+                                    <span class="page-size">每页: <strong>{{ pageSize }}</strong> 条</span>
+                                </div>
+                            </div>
+
+                            <!-- 表格 -->
+                            <el-table :data="pageOrders" border class="custom-stripe-table" stripe
+                                style="width: 100%; margin-bottom: 20px;" @selection-change="handleSelectionChange">
+                                <el-table-column width="55" align="center" type="selection"></el-table-column>
+
+                                <!-- 序列号列 -->
+                                <el-table-column align="center" label="序号" width="80" fixed="left">
+                                    <template #default="scope">
+                                        <span>{{ (currentPage - 1) * pageSize + scope.$index + 1 }}</span>
+                                    </template>
+                                </el-table-column>
+
+                                <el-table-column align="center" prop="order_code" label="订单编号" width="180"
+                                    fixed="left"></el-table-column>
+                                <el-table-column align="center" prop="upload_user" label="上传者"
+                                    width="120"></el-table-column>
+                                <el-table-column align="center" prop="product_name" label="商品名称"
+                                    width="150"></el-table-column>
+                                <el-table-column align="center" prop="specification" label="商品规格"
+                                    width="120"></el-table-column>
+                                <el-table-column align="center" prop="payment_method" label="支付方式"
+                                    width="100"></el-table-column>
+                                <el-table-column align="center" prop="logistics_company" label="物流公司"
+                                    width="120"></el-table-column>
+                                <el-table-column align="center" prop="tracking_number" label="快递单号"
+                                    width="160"></el-table-column>
+                                <el-table-column align="center" prop="order_time" label="下单时间"
+                                    width="140"></el-table-column>
+                                <el-table-column align="center" prop="group_time" label="拼单时间"
+                                    width="140"></el-table-column>
+                                <el-table-column align="center" prop="ship_time" label="发货时间" width="140"></el-table-column>
+                                <el-table-column align="center" prop="order_status" label="订单状态" width="120">
+                                    <template #default="scope">
+                                        <span class="status-badge" :class="scope.row.order_status">
+                                            {{ scope.row.order_status }}
+                                        </span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column align="center" prop="receiver" label="收件人" width="100"></el-table-column>
+                                <el-table-column align="center" prop="contact" label="联系方式" width="130"></el-table-column>
+                                <el-table-column align="center" prop="shipping_address" label="收货地址"
+                                    width="200"></el-table-column>
+                                <el-table-column align="center" prop="shop_name" label="店铺名称" width="100"></el-table-column>
+                                <el-table-column align="center" prop="product_price" label="商品价格"
+                                    width="110"></el-table-column>
+                                <el-table-column align="center" prop="actual_amount" label="实付金额"
+                                    width="110"></el-table-column>
+                                <el-table-column align="center" prop="create_time" label="创建时间"
+                                    width="110"></el-table-column>
+                                <el-table-column align="center" prop="update_time" label="更新时间"
+                                    width="110"></el-table-column>
+                                <el-table-column align="center" label="操作" width="180" fixed="right">
+                                    <template #default="scope">
+                                        <div class="compact-buttons">
+                                            <el-button type="primary" @click="viewOrder(scope.row)" round size="small">
+                                                <i class="fas fa-eye"></i> 查看
+                                            </el-button>
+                                            <el-button type="success" @click="editOrder(scope.row)" round size="small">
+                                                <i class="fas fa-edit"></i> 编辑
+                                            </el-button>
+                                            <el-button type="danger" @click="deleteOrder(scope.row)" round size="small">
+                                                <i class="fas fa-trash"></i> 删除
+                                            </el-button>
+                                        </div>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+
+                            <!-- 分页 -->
+                            <div class="pagination-container">
+                                <el-row>
+                                    <el-col :span="8" style="text-align: left;">
+                                        <el-button type="danger" @click="batchDelete"
+                                            :disabled="selectedOrders.length === 0">
+                                            <i class="fas fa-trash"></i> 批量删除
+                                        </el-button>
+                                    </el-col>
+                                    <el-col :span="16" style="text-align: right;">
+                                        <el-pagination :current-page="currentPage" :page-size="pageSize"
+                                            :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
+                                            :total="total" @size-change="handleSizeChange"
+                                            @current-change="handleCurrentChange" class="pagination-right" />
+                                    </el-col>
+                                </el-row>
+                            </div>
+
+                            <!-- 订单表单对话框 -->
+                            <el-dialog v-model="dialogVisible" :title="dialogTitle"
+                                :style="{ width: '95%', maxWidth: '1600px' }" @close="closeDialogForm()">
+
+                                <div class="custom-dialog-content">
+                                    <!-- 左右布局容器 -->
+                                    <div class="dialog-layout-container">
+                                        <!-- 左侧：图片区域 -->
+                                        <div class="dialog-left-image">
+                                            <div class="image-label">订单图片：</div>
+                                            <div class="image-upload-container">
+                                                <!-- 方案1：使用简单容器（推荐） -->
+                                                <div class="simple-image-container">
+                                                    <div class="avatar-uploader"
+                                                        :class="{ 'disabled': isView || isEdit, 'disabled-view': isView || isEdit }">
+
+                                                        <!-- 添加模式：允许上传 -->
+                                                        <el-upload v-if="!isView && !isEdit" :show-file-list="false"
+                                                            :http-request="handleImageUpload"
+                                                            :before-upload="beforeImageUpload" :disabled="isUploading"
+                                                            accept="image/*" class="image-upload-wrapper">
+
+                                                            <!-- 添加模式：没有图片时显示上传提示 -->
+                                                            <div v-if="!orderForm.img_path && !isUploading"
+                                                                class="avatar-uploader-placeholder">
+                                                                <i class="fas fa-cloud-upload-alt avatar-uploader-icon"></i>
+                                                                <div class="upload-text">点击上传订单截图</div>
+                                                                <div class="upload-hint">支持JPG、PNG格式，最大5MB</div>
+                                                            </div>
+
+                                                            <!-- 上传/加载状态 -->
+                                                            <div v-else-if="isUploading"
+                                                                class="avatar-uploader-placeholder uploading">
+                                                                <div class="image-loading-spinner"></div>
+                                                                <div class="upload-text">识别中...</div>
+                                                            </div>
+
+                                                            <!-- 有图片时显示图片 -->
+                                                            <div v-else class="image-display-area-fixed">
+                                                                <div v-if="!imageLoaded && !imageLoadError"
+                                                                    class="image-loading-overlay">
+                                                                    <div class="image-loading-spinner"></div>
+                                                                    <div class="image-loading-text">图片加载中...</div>
+                                                                </div>
+                                                                <img :src="orderForm.img_path"
+                                                                    class="order-image-preview-fixed"
+                                                                    :class="{ 'loaded': imageLoaded, 'error': imageLoadError }"
+                                                                    @error="handleImageError" @load="handleImageLoad"
+                                                                    alt="订单图片" style="max-width: 95%; max-height: 95%;" />
+                                                            </div>
+                                                        </el-upload>
+
+                                                        <!-- 查看/编辑模式：直接显示图片 -->
+                                                        <div v-else class="image-display-area-fixed">
+                                                            <div v-if="!orderForm.img_path"
+                                                                class="avatar-uploader-placeholder">
+                                                                <i class="fas fa-image avatar-uploader-icon"></i>
+                                                                <div class="upload-text">无订单图片</div>
+                                                            </div>
+                                                            <div v-else>
+                                                                <div v-if="!imageLoaded && !imageLoadError"
+                                                                    class="image-loading-overlay">
+                                                                    <div class="image-loading-spinner"></div>
+                                                                    <div class="image-loading-text">图片加载中...</div>
+                                                                </div>
+                                                                <img :src="orderForm.img_path"
+                                                                    class="order-image-preview-fixed simple-image-display"
+                                                                    :class="{ 'loaded': imageLoaded, 'error': imageLoadError }"
+                                                                    @error="handleImageError" @load="handleImageLoad"
+                                                                    alt="订单图片" style="max-width: 95%; max-height: 95%;" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- OCR状态显示 -->
+                                            <div v-if="ocrStatus" style="margin-top: 15px;">
+                                                <div :class="['ocr-status-card', ocrStatus.type]" :style="`background: ${ocrStatus.type === 'error' ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%)' : 
+                                                                           ocrStatus.type === 'warning' ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%)' :
+                                                                           'linear-gradient(135deg, rgba(121, 187, 255, 0.1) 0%, rgba(121, 187, 255, 0.05) 100%)'};
+                                                            border-left: 4px solid ${ocrStatus.type === 'error' ? '#ef4444' : 
+                                                                                   ocrStatus.type === 'warning' ? '#f59e0b' : 'rgb(121, 187, 255)'};
+                                                            padding: 12px 15px; border-radius: 8px; margin-bottom: 10px;`">
+
+                                                    <div
+                                                        style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                                        <i :class="ocrStatus.icon" :style="`color: ${ocrStatus.type === 'error' ? '#ef4444' : 
+                                                                           ocrStatus.type === 'warning' ? '#f59e0b' : 'rgb(121, 187, 255)'}; 
+                                                                   font-size: 18px;`"></i>
+                                                        <span style="font-weight: 600; font-size: 14px;">
+                                                            {{ ocrStatus.title }}
+                                                        </span>
+                                                    </div>
+
+                                                    <div style="font-size: 13px; color: #4b5563; margin-bottom: 5px;">
+                                                        {{ ocrStatus.message }}
+                                                    </div>
+
+                                                    <div v-if="ocrStatus.hint" style="font-size: 12px; color: #6b7280;">
+                                                        <i class="fas fa-lightbulb" style="margin-right: 5px;"></i>
+                                                        {{ ocrStatus.hint }}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 模式提示 -->
+                                            <div class="mode-hint">
+                                                <div v-if="isView" class="hint view-hint">
+                                                    <i class="fas fa-eye"></i> 查看模式：仅用于信息核对
+                                                </div>
+                                                <div v-else-if="isEdit" class="hint edit-hint">
+                                                    <i class="fas fa-edit"></i> 编辑模式：可修改表单，图片不可更换
+                                                </div>
+                                                <div v-else class="hint add-hint">
+                                                    <i class="fas fa-plus"></i> 添加模式：上传图片自动识别并填充表单
+                                                </div>
+                                            </div>
+
+                                            <!-- 编辑模式下的图片限制提示 -->
+                                            <div v-if="isEdit" class="edit-image-restriction">
+                                                <i class="fas fa-lock"></i>
+                                                <span>编辑模式下无法更换图片，如需更换请删除后重新添加</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- 右侧：表单区域 -->
+                                        <div class="dialog-right-form">
+                                            <div class="form-container-wrapper">
+                                                <!-- 使用自定义的网格布局 -->
+                                                <div class="dialog-form-grid">
+                                                    <!-- 第一行 -->
+                                                    <div class="form-grid-row">
+                                                        <div class="form-item">
+                                                            <div class="form-label">订单编号：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.order_code"
+                                                                    :disabled="isView || isEdit" placeholder="请填写订单编号" />
+                                                                <div v-if="isEdit" class="order-status-hint">
+                                                                    <i class="fas fa-lock"></i> 编辑模式下订单编号不可修改
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-item">
+                                                            <div class="form-label">上传者：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.upload_user" :disabled="true"
+                                                                    placeholder="当前用户" />
+                                                                <div class="order-status-hint" v-if="!isView">
+                                                                    * 当前用户：{{ currentUser.username }}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 第二行 -->
+                                                    <div class="form-grid-row">
+                                                        <div class="form-item">
+                                                            <div class="form-label">商品名称：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.product_name"
+                                                                    :disabled="isView" placeholder="请输入商品名称" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-item">
+                                                            <div class="form-label">商品规格：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.specification"
+                                                                    :disabled="isView" placeholder="请输入商品规格" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 第三行 -->
+                                                    <div class="form-grid-row">
+                                                        <div class="form-item">
+                                                            <div class="form-label">支付方式：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.payment_method"
+                                                                    :disabled="isView" placeholder="请输入支付方式" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-item">
+                                                            <div class="form-label">物流公司：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.logistics_company"
+                                                                    :disabled="isView" placeholder="请输入物流公司" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 第四行 -->
+                                                    <div class="form-grid-row">
+                                                        <div class="form-item">
+                                                            <div class="form-label">快递单号：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.tracking_number"
+                                                                    :disabled="isView" placeholder="请输入快递单号" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-item">
+                                                            <div class="form-label">下单时间：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.order_time" :disabled="isView"
+                                                                    placeholder="请输入下单时间" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 第五行 -->
+                                                    <div class="form-grid-row">
+                                                        <div class="form-item">
+                                                            <div class="form-label">拼单时间：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.group_time" :disabled="isView"
+                                                                    placeholder="请输入拼单时间" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-item">
+                                                            <div class="form-label">发货时间：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.ship_time" :disabled="isView"
+                                                                    placeholder="请输入发货时间" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 第六行 -->
+                                                    <div class="form-grid-row">
+                                                        <div class="form-item">
+                                                            <div class="form-label">订单状态：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.order_status"
+                                                                    :disabled="isView" placeholder="请输入订单状态" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-item">
+                                                            <div class="form-label">收件人：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.receiver" :disabled="isView"
+                                                                    placeholder="请输入收件人" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 第七行 -->
+                                                    <div class="form-grid-row">
+                                                        <div class="form-item">
+                                                            <div class="form-label">联系方式：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.contact" :disabled="isView"
+                                                                    placeholder="请输入联系方式" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-item">
+                                                            <div class="form-label">店铺名称：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.shop_name" :disabled="isView"
+                                                                    placeholder="请输入店铺名称" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 第八行 -->
+                                                    <div class="form-grid-row">
+                                                        <div class="form-item">
+                                                            <div class="form-label">商品价格：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.product_price"
+                                                                    :disabled="isView" placeholder="请输入商品价格" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-item">
+                                                            <div class="form-label">实付金额：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.actual_amount"
+                                                                    :disabled="isView" placeholder="请输入实付金额" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 第九行 -->
+                                                    <div class="form-grid-row">
+                                                        <div class="form-item">
+                                                            <div class="form-label">创建时间：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.create_time" :disabled="true"
+                                                                    placeholder="系统自动生成" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-item">
+                                                            <div class="form-label">更新时间：</div>
+                                                            <div class="form-input">
+                                                                <el-input v-model="orderForm.update_time" :disabled="true"
+                                                                    placeholder="系统自动生成" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 第十行：地址整行 -->
+                                                    <div class="form-grid-row-full">
+                                                        <div class="form-item-full">
+                                                            <div class="form-label">收货地址：</div>
+                                                            <div class="form-input-full">
+                                                                <el-input v-model="orderForm.shipping_address"
+                                                                    :disabled="isView" placeholder="请输入收货地址" type="textarea"
+                                                                    :rows="2" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <template #footer>
+                                    <span class="dialog-footer">
+                                        <el-button @click="closeDialogForm()">取消</el-button>
+                                        <el-button v-show="!isView" type="primary"
+                                            @click="submitCustomOrderForm()">确认</el-button>
+                                    </span>
+                                </template>
+                            </el-dialog>
+                        </el-main>
+
+                        <!-- Footer -->
+                        <el-footer class="main-footer">
+                            <div class="footer-content">
+                                <div class="copyright">© 2026 订单管理系统. 保留所有权利.</div>
+                                <div class="version">版本: v1.0.0</div>
+                            </div>
+                        </el-footer>
+                    </el-container>
+                </el-container>
+            </el-container>
+        </div>
+    </div>
+
+    <!-- 依赖库 -->
+    <script src="./js/lib/vue/vue.global.prod.js"></script>
+    <script src="./js/lib/axios/axios.min.js"></script>
+    <script src="./js/lib/element-plus/index.full.js"></script>
+    <!-- 引入外部js文件 -->
+    <script src="./js/index.js"></script>
+</body>
+
+</html>

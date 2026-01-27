@@ -1,0 +1,5 @@
+nohup: 忽略输入
+  File "/opt/order_system/backend/picture_orc.py", line 82
+    lines = text.split('
+                       ^
+SyntaxError: unterminated string literal (detected at line 82)

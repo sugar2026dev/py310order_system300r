@@ -1,0 +1,8 @@
+INFO 2026-01-05 13:41:52,244 autoreload Watching for file changes with StatReloader
+INFO 2026-01-05 13:42:33,239 autoreload Watching for file changes with StatReloader
+INFO 2026-01-05 13:43:10,023 basehttp "GET /api/debug/media/ HTTP/1.1" 200 1273
+WARNING 2026-01-05 13:43:24,356 log Not Found: /
+WARNING 2026-01-05 13:43:24,357 basehttp "GET / HTTP/1.1" 404 2653
+WARNING 2026-01-05 13:43:35,557 log Not Found: /
+WARNING 2026-01-05 13:43:35,557 basehttp "GET / HTTP/1.1" 404 2653
+INFO 2026-01-05 13:47:15,676 autoreload D:\py\test\order_system\backend\django_project\settings.py changed, reloading.

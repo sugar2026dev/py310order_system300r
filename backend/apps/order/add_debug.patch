@@ -1,0 +1,10 @@
+--- views.py.backup
++++ views.py
+@@ -在ocr_for_form函数开始处添加以下代码（找到def ocr_for_form(request):）:
++    print("=" * 80)
++    print("📸 [OCR-FORM] 函数被调用")
++    print(f"📸 [OCR-FORM] 用户: {request.user.username if request.user.is_authenticated else '未认证'}")
++    print(f"📸 [OCR-FORM] 请求方法: {request.method}")
++    print(f"📸 [OCR-FORM] Content-Type: {request.content_type}")
++    print(f"📸 [OCR-FORM] FILES keys: {list(request.FILES.keys())}")
++    print("=" * 80)

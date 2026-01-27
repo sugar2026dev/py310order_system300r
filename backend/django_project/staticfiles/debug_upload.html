@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>调试上传接口</title>
+</head>
+<body>
+    <h1>调试上传接口调用</h1>
+    
+    <input type="file" id="fileInput" accept="image/*">
+    <button onclick="testAllEndpoints()">测试所有接口</button>
+    
+    <div id="results"></div>
+    
+    <script>
+    async function testEndpoint(url, method, formData, name) {
+        const start = Date.now();
+        try {
+            const response = await fetch(url, {
+                method: method,
+                body: formData
+            });
+            const end = Date.now();
+            const text = await response.text();
+            return {
+                name,
+                url,
+                status: response.status,
+                time: end - start,
+                response: text.substring(0, 200)
+            };
+        } catch (error) {
+            return {
+                name,
+                url,
+                status: 'error',
+                error: error.message
+            };
+        }
+    }
+    
+    async function testAllEndpoints() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            alert('请选择文件');
+            return;
+        }
+        
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = '<h3>测试中...</h3>';
+        
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        // 测试所有可能的接口
+        const endpoints = [
+            { name: '直接OCR服务', url: 'http://127.0.0.1:5000/pic', method: 'POST' },
+            { name: 'Nginx代理 /pic', url: '/pic', method: 'POST' },
+            { name: 'Django OCR接口', url: '/api/orders/ocr-for-form/', method: 'POST' },
+            { name: '上传接口1', url: '/api/upload/', method: 'POST' },
+            { name: '上传接口2', url: '/api/orders/upload/', method: 'POST' }
+        ];
+        
+        const allResults = [];
+        
+        for (const endpoint of endpoints) {
+            const result = await testEndpoint(endpoint.url, endpoint.method, formData, endpoint.name);
+            allResults.push(result);
+            
+            // 更新显示
+            let html = '<h3>测试结果:</h3><table border="1" style="border-collapse: collapse; width: 100%;">';
+            html += '<tr><th>接口名称</th><th>URL</th><th>状态</th><th>耗时(ms)</th><th>响应</th></tr>';
+            
+            allResults.forEach(r => {
+                html += `<tr>
+                    <td>${r.name}</td>
+                    <td>${r.url}</td>
+                    <td>${r.status}</td>
+                    <td>${r.time || '-'}</td>
+                    <td style="max-width: 300px; overflow: hidden;">${r.response || r.error || '-'}</td>
+                </tr>`;
+            });
+            
+            html += '</table>';
+            resultsDiv.innerHTML = html;
+        }
+    }
+    
+    // 页面加载时显示当前配置
+    window.onload = function() {
+        const info = `
+            <h3>当前页面信息:</h3>
+            <p>页面URL: ${window.location.href}</p>
+            <p>页面Origin: ${window.location.origin}</p>
+            <p>API基础URL: ${window.APP_CONFIG?.API_BASE_URL || '未定义'}</p>
+        `;
+        document.getElementById('results').innerHTML = info;
+    };
+    </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+nohup: 忽略输入
+启动Flask OCR服务...
+ * Serving Flask app 'fixed_ocr'
+ * Debug mode: off
+Address already in use
+Port 5000 is in use by another program. Either identify and stop that program, or start the server with a different port.

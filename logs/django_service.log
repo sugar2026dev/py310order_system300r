@@ -1,0 +1,84 @@
+[2026-01-22 21:55:30 +0800] [6943] [INFO] Starting gunicorn 23.0.0
+[2026-01-22 21:55:30 +0800] [6943] [INFO] Listening at: http://0.0.0.0:8000 (6943)
+[2026-01-22 21:55:30 +0800] [6943] [INFO] Using worker: sync
+[2026-01-22 21:55:30 +0800] [6945] [INFO] Booting worker with pid: 6945
+[2026-01-22 21:55:30 +0800] [6946] [INFO] Booting worker with pid: 6946
+Python路径设置:
+  1. /opt/order_system/backend/django_project
+  2. /opt/order_system/backend/apps
+  3. /opt/order_system/backend
+前端目录: /opt/order_system/frontend
+媒体目录: /opt/order_system/backend/media
+Python路径设置:
+  1. /opt/order_system/backend/django_project
+  2. /opt/order_system/backend/apps
+  3. /opt/order_system/backend
+前端目录: /opt/order_system/frontend
+媒体目录: /opt/order_system/backend/media
+📸 [FORM-OCR] 收到表单OCR请求，用户: test1
+📁 [FORM-OCR] 文件: 12.jpg, 556281字节
+💾 [FORM-OCR] 保存临时文件到: /opt/order_system/backend/media/temp/form_ocr_20260122_220039_118056_12.jpg
+🔗 [FORM-OCR] 调用OCR服务: http://127.0.0.1:5000/pic
+📥 [FORM-OCR] OCR响应状态码: 200
+📄 [FORM-OCR] 响应接收成功
+✅ [FORM-OCR] 识别到数据，订单编号: 
+📊 [FORM-OCR] 提取的字段: ['下单时间', '发货时间', '商品价格', '商品名称', '商品规格', '实付金额', '店铺名称', '快递单号', '拼单时间', '支付方式', '收件人', '收货地址', '物流公司', '联系方式', '订单状态', '订单编号']
+❌ [FORM-OCR] 未识别到订单编号
+🗑️ [FORM-OCR] 未识别到订单编号，删除临时文件
+📸 [FORM-OCR] 收到表单OCR请求，用户: test1
+📁 [FORM-OCR] 文件: 12.jpg, 556281字节
+💾 [FORM-OCR] 保存临时文件到: /opt/order_system/backend/media/temp/form_ocr_20260122_220049_567775_12.jpg
+🔗 [FORM-OCR] 调用OCR服务: http://127.0.0.1:5000/pic
+📥 [FORM-OCR] OCR响应状态码: 200
+📄 [FORM-OCR] 响应接收成功
+✅ [FORM-OCR] 识别到数据，订单编号: 
+📊 [FORM-OCR] 提取的字段: ['下单时间', '发货时间', '商品价格', '商品名称', '商品规格', '实付金额', '店铺名称', '快递单号', '拼单时间', '支付方式', '收件人', '收货地址', '物流公司', '联系方式', '订单状态', '订单编号']
+❌ [FORM-OCR] 未识别到订单编号
+🗑️ [FORM-OCR] 未识别到订单编号，删除临时文件
+📸 [FORM-OCR] 收到表单OCR请求，用户: test1
+📁 [FORM-OCR] 文件: 01.jpg, 295940字节
+💾 [FORM-OCR] 保存临时文件到: /opt/order_system/backend/media/temp/form_ocr_20260122_220118_435376_01.jpg
+🔗 [FORM-OCR] 调用OCR服务: http://127.0.0.1:5000/pic
+📥 [FORM-OCR] OCR响应状态码: 200
+📄 [FORM-OCR] 响应接收成功
+✅ [FORM-OCR] 识别到数据，订单编号: 
+📊 [FORM-OCR] 提取的字段: ['下单时间', '发货时间', '商品价格', '商品名称', '商品规格', '实付金额', '店铺名称', '快递单号', '拼单时间', '支付方式', '收件人', '收货地址', '物流公司', '联系方式', '订单状态', '订单编号']
+❌ [FORM-OCR] 未识别到订单编号
+🗑️ [FORM-OCR] 未识别到订单编号，删除临时文件
+📸 [FORM-OCR] 收到表单OCR请求，用户: test1
+📁 [FORM-OCR] 文件: 02.jpg, 302092字节
+💾 [FORM-OCR] 保存临时文件到: /opt/order_system/backend/media/temp/form_ocr_20260122_220207_472027_02.jpg
+🔗 [FORM-OCR] 调用OCR服务: http://127.0.0.1:5000/pic
+📥 [FORM-OCR] OCR响应状态码: 200
+📄 [FORM-OCR] 响应接收成功
+✅ [FORM-OCR] 识别到数据，订单编号: 
+📊 [FORM-OCR] 提取的字段: ['下单时间', '发货时间', '商品价格', '商品名称', '商品规格', '实付金额', '店铺名称', '快递单号', '拼单时间', '支付方式', '收件人', '收货地址', '物流公司', '联系方式', '订单状态', '订单编号']
+❌ [FORM-OCR] 未识别到订单编号
+🗑️ [FORM-OCR] 未识别到订单编号，删除临时文件
+[2026-01-23 00:46:26 +0800] [6946] [WARNING] Invalid request from ip=79.124.59.86: Invalid HTTP request line: '\x03\x00\x00/*à\x00\x00\x00\x00\x00Cookie: mstshash=Administr'
+[2026-01-23 01:03:10 +0800] [6946] [WARNING] Invalid request from ip=79.124.59.86: Invalid HTTP request line: '\x03\x00\x00/*à\x00\x00\x00\x00\x00Cookie: mstshash=Administr'
+[2026-01-23 11:01:40 +0800] [6945] [WARNING] Invalid request from ip=3.143.33.63: Invalid HTTP request line: 'SSH-2.0-Go'
+📸 [FORM-OCR] 收到表单OCR请求，用户: test1
+📁 [FORM-OCR] 文件: 12.jpg, 556281字节
+💾 [FORM-OCR] 保存临时文件到: /opt/order_system/backend/media/temp/form_ocr_20260123_110146_818594_12.jpg
+🔗 [FORM-OCR] 调用OCR服务: http://127.0.0.1:5000/pic
+📥 [FORM-OCR] OCR响应状态码: 200
+📄 [FORM-OCR] 响应接收成功
+✅ [FORM-OCR] 识别到数据，订单编号: 
+📊 [FORM-OCR] 提取的字段: ['下单时间', '发货时间', '商品价格', '商品名称', '商品规格', '实付金额', '店铺名称', '快递单号', '拼单时间', '支付方式', '收件人', '收货地址', '物流公司', '联系方式', '订单状态', '订单编号']
+❌ [FORM-OCR] 未识别到订单编号
+🗑️ [FORM-OCR] 未识别到订单编号，删除临时文件
+📸 [FORM-OCR] 收到表单OCR请求，用户: test1
+📁 [FORM-OCR] 文件: 01.jpg, 295940字节
+💾 [FORM-OCR] 保存临时文件到: /opt/order_system/backend/media/temp/form_ocr_20260123_110208_085189_01.jpg
+🔗 [FORM-OCR] 调用OCR服务: http://127.0.0.1:5000/pic
+📥 [FORM-OCR] OCR响应状态码: 200
+📄 [FORM-OCR] 响应接收成功
+✅ [FORM-OCR] 识别到数据，订单编号: 
+📊 [FORM-OCR] 提取的字段: ['下单时间', '发货时间', '商品价格', '商品名称', '商品规格', '实付金额', '店铺名称', '快递单号', '拼单时间', '支付方式', '收件人', '收货地址', '物流公司', '联系方式', '订单状态', '订单编号']
+❌ [FORM-OCR] 未识别到订单编号
+🗑️ [FORM-OCR] 未识别到订单编号，删除临时文件
+[2026-01-23 11:34:20 +0800] [6943] [INFO] Handling signal: term
+[2026-01-23 11:34:20 +0800] [6945] [INFO] Worker exiting (pid: 6945)
+[2026-01-23 11:34:20 +0800] [6946] [INFO] Worker exiting (pid: 6946)
+[2026-01-23 11:34:21 +0800] [6943] [INFO] Shutting down: Master

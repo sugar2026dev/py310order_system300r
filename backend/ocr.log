@@ -1,0 +1,3 @@
+nohup: 忽略输入
+  File "picture_orc.py", line 10
+SyntaxError: Non-ASCII character '\xe9' in file picture_orc.py on line 10, but no encoding declared; see http://www.python.org/peps/pep-0263.html for details

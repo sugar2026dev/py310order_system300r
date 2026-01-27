@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统健康检查</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .service { margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        button { margin: 5px; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <h1>系统健康检查</h1>
+    
+    <div class="service" id="django-status">检查Django服务...</div>
+    <div class="service" id="flask-status">检查Flask OCR服务...</div>
+    <div class="service" id="ocr-test">OCR功能测试...</div>
+    
+    <div id="test-interface">
+        <h3>接口测试:</h3>
+        <button onclick="testDjangoOCR()">测试Django OCR接口</button>
+        <button onclick="testFlaskOCR()">测试Flask OCR接口</button>
+        <div id="test-result" style="margin-top: 10px;"></div>
+    </div>
+    
+    <script>
+        // 检查Django服务
+        fetch('/api/check-auth/')
+            .then(response => {
+                const div = document.getElementById('django-status');
+                if (response.ok) {
+                    div.className = 'service success';
+                    div.innerHTML = '✅ Django服务正常 (端口: 8000)';
+                } else {
+                    div.className = 'service error';
+                    div.innerHTML = '❌ Django服务异常';
+                }
+            })
+            .catch(error => {
+                document.getElementById('django-status').className = 'service error';
+                document.getElementById('django-status').innerHTML = '❌ Django服务无法访问';
+            });
+        
+        // 检查Flask服务
+        fetch('http://127.0.0.1:5000/', { mode: 'no-cors' })
+            .then(() => {
+                document.getElementById('flask-status').className = 'service success';
+                document.getElementById('flask-status').innerHTML = '✅ Flask OCR服务正常 (端口: 5001)';
+            })
+            .catch(error => {
+                // 尝试直接测试接口
+                const testData = new FormData();
+                testData.append('image', new Blob(['test'], { type: 'image/jpeg' }), 'test.jpg');
+                
+                fetch('http://127.0.0.1:5000/pic', {
+                    method: 'POST',
+                    body: testData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById('flask-status').className = 'service success';
+                        document.getElementById('flask-status').innerHTML = '✅ Flask OCR服务正常 (端口: 5001)';
+                    } else {
+                        document.getElementById('flask-status').className = 'service error';
+                        document.getElementById('flask-status').innerHTML = '⚠️ Flask OCR服务响应异常';
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('flask-status').className = 'service error';
+                    document.getElementById('flask-status').innerHTML = '❌ Flask OCR服务无法访问 (端口: 5001)';
+                });
+            });
+        
+        // OCR功能测试
+        function testDjangoOCR() {
+            const resultDiv = document.getElementById('test-result');
+            resultDiv.innerHTML = '正在测试Django OCR接口...';
+            
+            const testData = new FormData();
+            testData.append('image', new Blob(['test image data'], { type: 'image/jpeg' }), 'test.jpg');
+            
+            fetch('/api/simple-ocr-upload/', {
+                method: 'POST',
+                body: testData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultDiv.innerHTML = `✅ Django OCR测试成功!<br>订单编号: ${data.data['订单编号']}`;
+                    document.getElementById('ocr-test').className = 'service success';
+                    document.getElementById('ocr-test').innerHTML = '✅ OCR功能正常';
+                } else {
+                    resultDiv.innerHTML = `❌ Django OCR测试失败: ${data.error}`;
+                }
+            })
+            .catch(error => {
+                resultDiv.innerHTML = `❌ Django OCR测试异常: ${error.message}`;
+            });
+        }
+        
+        function testFlaskOCR() {
+            const resultDiv = document.getElementById('test-result');
+            resultDiv.innerHTML = '正在测试Flask OCR接口...';
+            
+            const testData = new FormData();
+            testData.append('image', new Blob(['test image data'], { type: 'image/jpeg' }), 'test.jpg');
+            
+            fetch('http://127.0.0.1:5000/pic', {
+                method: 'POST',
+                body: testData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultDiv.innerHTML = `✅ Flask OCR测试成功!<br>订单编号: ${data.data['订单编号']}`;
+                } else {
+                    resultDiv.innerHTML = `❌ Flask OCR测试失败: ${data.error}`;
+                }
+            })
+            .catch(error => {
+                resultDiv.innerHTML = `❌ Flask OCR测试异常: ${error.message}`;
+            });
+        }
+        
+        // 自动测试OCR功能
+        setTimeout(() => {
+            testDjangoOCR();
+        }, 1000);
+    </script>
+</body>
+</html>
