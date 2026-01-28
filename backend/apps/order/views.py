@@ -1463,7 +1463,8 @@ def export_orders_excel(request):
         return response
 
     except Exception as e:
-        #print(f"❌ [EXPORT] 导出失败: {e}")
+        print(f"❌ [EXPORT] 导出失败: {e}")
+
         pass
         return JsonResponse({
             'code': 500,
