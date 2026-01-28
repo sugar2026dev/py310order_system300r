@@ -1323,155 +1323,126 @@ def debug_media(request):
     })
 
 
+
 @csrf_exempt
 @login_required
 @require_http_methods(["GET"])
-def export_orders_excel(request):
-    """导出订单到Excel"""
+@login_required
+def export_orders(request):
+    """导出订单到 Excel"""
     try:
         print(f"📤 [EXPORT] 收到导出请求，用户: {request.user.username}")
+        
+        # 1. 获取筛选参数 (保持原有的筛选逻辑)
+        keyword = request.GET.get('keyword', '')
+        start_date = request.GET.get('start_date', '')
+        end_date = request.GET.get('end_date', '')
 
-        # 获取查询参数
-        keyword = request.GET.get('keyword', '').strip()
-        start_date_str = request.GET.get('start_date', '')
-        end_date_str = request.GET.get('end_date', '')
-        export_all = request.GET.get('export_all', 'false') == 'true'
+        # 2. 构建查询
+        query = Q()
+        # 如果不是超级管理员，只能导出自己的(根据你的需求调整，这里假设管理员可看所有)
+        # if not request.user.is_superuser:
+        #     query &= Q(upload_user=request.user.username)
 
-        # 构建查询
-        queryset = Order.objects.all().order_by('-create_time')
-
-        # 关键词搜索
         if keyword:
-            queryset = queryset.filter(
+            query &= (
                 Q(order_code__icontains=keyword) |
-                Q(upload_user__icontains=keyword) |
-                Q(extracted_data__contains=keyword)
+                Q(extracted_data__icontains=keyword) |
+                Q(upload_user__icontains=keyword)
             )
+        
+        if start_date and end_date:
+            # 注意时区问题，这里假设前端传的是日期字符串
+            query &= Q(created_at__range=[f"{start_date} 00:00:00", f"{end_date} 23:59:59"])
 
-        # 日期筛选
-        if start_date_str and end_date_str:
-            try:
-                start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
-                end_date = end_date.replace(hour=23, minute=59, second=59)
-                queryset = queryset.filter(create_time__range=[start_date, end_date])
-            except ValueError as e:
-                print(f"⚠️ [EXPORT] 日期格式错误: {e}")
-                return JsonResponse({
-                    'code': 400,
-                    'msg': '日期格式不正确，请使用YYYY-MM-DD格式',
-                    'data': None
-                })
+        orders = Order.objects.filter(query).order_by('-created_at')
+        
+        # 3. 准备数据列表
+        data_list = []
+        for order in orders:
+            # 基础信息
+            row = {
+                '系统ID': order.id,
+                '上传者': order.upload_user,
+                '创建时间': order.created_at.strftime('%Y-%m-%d %H:%M:%S') if order.created_at else '',
+                # 如果模型里有单独的 order_code 字段
+                '订单编号(系统)': order.order_code, 
+            }
+            
+            # 合并 OCR 识别数据 (extracted_data)
+            # 这一步很关键：把 JSON 里的 {'商品名称': 'xxx'} 变成 row['商品名称'] = 'xxx'
+            if order.extracted_data and isinstance(order.extracted_data, dict):
+                row.update(order.extracted_data)
+                
+            data_list.append(row)
 
-        # 检查数据量
-        total_count = queryset.count()
+        # 4. 生成 DataFrame
+        if not data_list:
+            # 如果没有数据，生成一个空表
+            df = pd.DataFrame()
+        else:
+            df = pd.DataFrame(data_list)
 
-        if total_count == 0:
-            return JsonResponse({
-                'code': 404,
-                'msg': '没有找到符合条件的订单数据',
-                'data': None
-            })
+        # 5. 定义导出列的顺序 (这里千万不要写 '订单数据' 这种不存在的 key)
+        # 这些 key 必须与 picture_orc.py 中定义的 keys 一致
+        export_columns = [
+            '订单编号', 
+            '商品名称', 
+            '商品规格', 
+            '商品价格', 
+            '实付金额', 
+            '支付方式', 
+            '物流公司', 
+            '快递单号', 
+            '订单状态', 
+            '收件人', 
+            '联系方式', 
+            '收货地址', 
+            '店铺名称', 
+            '下单时间', 
+            '拼单时间', 
+            '发货时间',
+            '上传者',      # 额外添加的系统字段
+            '创建时间'      # 额外添加的系统字段
+        ]
 
-        # 准备数据
-        orders_data = []
-        for order in queryset:
-            try:
-                orders_data.append({
-                    '订单编号': order.order_code or '',
-                    '上传者': order.upload_user or '',
-                    '商品名称': order.get_product_name() or '',
-                    '商品规格': order.get_specification() or '',
-                    '商品价格': order.get_product_price() or '',
-                    '支付方式': order.get_payment_method() or '',
-                    '实付金额': order.get_actual_amount() or '',
-                    '物流公司': order.get_logistics_company() or '',
-                    '快递单号': order.get_tracking_number() or '',
-                    '下单时间': order.get_order_time() or '',
-                    '拼单时间': order.get_group_time() or '',
-                    '发货时间': order.get_ship_time() or '',
-                    '订单状态': order.get_order_status() or '',
-                    '收件人': order.get_receiver() or '',
-                    '联系方式': order.get_contact() or '',
-                    '收货地址': order.get_shipping_address() or '',
-                    '店铺名称': order.get_shop_name() or '',
-                    '创建时间': order.create_time.strftime('%Y-%m-%d %H:%M:%S') if order.create_time else '',
-                    '更新时间': order.update_time.strftime('%Y-%m-%d %H:%M:%S') if order.update_time else '',
-                    '图片文件名': order.img_filename or '',
-                })
-            except Exception as e:
-                print(f"⚠️ [EXPORT] 处理订单 {order.id} 时出错: {e}")
-                continue
+        # 6. 重整列顺序 (关键：使用 reindex 防止 KeyError)
+        # 如果 df 中缺少某个列（比如所有订单都没识别出'商品规格'），reindex 会自动填充空值，而不会报错
+        df = df.reindex(columns=export_columns)
 
-        if not orders_data:
-            return JsonResponse({
-                'code': 404,
-                'msg': '没有可导出的数据',
-                'data': None
-            })
-
-        # 创建DataFrame
-        df = pd.DataFrame(orders_data)
-
-        # 创建Excel文件
+        # 7. 写入 Excel
         output = io.BytesIO()
-        # 生成文件名
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = '订单数据'
-        mysheet_name = filename+timestamp
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, sheet_name=mysheet_name, index=False)
-            worksheet = writer.sheets['订单数据']
-
-            # 设置列宽
-            for i, column in enumerate(df.columns, 1):
-                column_letter = openpyxl.utils.get_column_letter(i)
-                max_length = max(
-                    df[column].astype(str).map(len).max(),
-                    len(column)
-                ) + 2
-                worksheet.column_dimensions[column_letter].width = min(max_length, 30)
-
-            # 设置表头样式
-            for cell in worksheet[1]:
-                cell.font = openpyxl.styles.Font(bold=True, color="FFFFFF")
-                cell.fill = openpyxl.styles.PatternFill(start_color="2E8B57", end_color="2E8B57", fill_type="solid")
-                cell.alignment = openpyxl.styles.Alignment(horizontal="center", vertical="center")
-
-            worksheet.freeze_panes = 'A2'
-            worksheet.auto_filter.ref = worksheet.dimensions
+            df.to_excel(writer, index=False, sheet_name='订单列表')
+            
+            # 可选：自动调整列宽（简单的估算）
+            worksheet = writer.sheets['订单列表']
+            for idx, col in enumerate(df.columns):
+                # 限制最大宽度，防止太宽
+                max_len = min(50, max((df[col].astype(str).map(len).max() if not df.empty else 0), len(str(col))) + 2)
+                worksheet.column_dimensions[chr(65 + idx)].width = max_len
 
         output.seek(0)
 
-        # 生成文件名
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = '订单数据'
-
-        if keyword:
-            filename += f'_{keyword}'
-        if start_date_str and end_date_str:
-            filename += f'_{start_date_str}_至_{end_date_str}'
-        filename += f'_{timestamp}.xlsx'
-
-        # 创建HTTP响应
+        # 8. 返回响应
+        # 文件名主要由前端控制，这里设置一个默认的即可
+        filename = '订单数据.xlsx'
+        encoded_filename = escape_uri_path(filename)
+        
         response = HttpResponse(
             output.getvalue(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-
+        response['Content-Disposition'] = f'attachment; filename="{encoded_filename}"; filename*=UTF-8\'\'{encoded_filename}'
+        
+        print(f"✅ [EXPORT] 导出成功，共 {len(data_list)} 条数据")
         return response
 
     except Exception as e:
-        print(f"❌ [EXPORT] 导出失败: {e}")
-
-        pass
-        return JsonResponse({
-            'code': 500,
-            'msg': f'导出失败: {str(e)}',
-            'data': None
-        })
-
+        print(f"❌ [EXPORT] 导出失败: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'code': 500, 'msg': f'导出失败: {str(e)}'})
 
 @csrf_exempt
 @login_required
