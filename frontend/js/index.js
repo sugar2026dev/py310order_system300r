@@ -600,78 +600,88 @@ const app = createApp({
     const handleSelectionChange = (rows) => {
       selectedOrders.value = rows.map(row => row.id);
     };
+  // ==================== 导出功能 ====================
+  const exportToExcel = async () => {
+    try {
+      exportLoading.value = true;
+      ElMessage.info('正在准备导出数据...');
 
-    // ==================== 导出功能 ====================
-    const exportToExcel = async () => {
-      try {
-        exportLoading.value = true;
-        ElMessage.info('正在准备导出数据...');
-
-        const params = new URLSearchParams();
-        if (searchKeyword.value) {
-          params.append('keyword', searchKeyword.value);
-        }
-
-        if (dateRange.value && dateRange.value.length === 2) {
-          const [start, end] = dateRange.value;
-          params.append('start_date', formatDateForExport(start));
-          params.append('end_date', formatDateForExport(end));
-        }
-
-        if (total.value > 1000) {
-          const confirmed = await ElMessageBox.confirm(
-            `当前筛选结果有 ${total.value} 条数据，导出可能需要较长时间。是否继续？`,
-            '提示',
-            {
-              type: 'warning',
-              confirmButtonText: '继续导出',
-              cancelButtonText: '取消'
-            }
-          );
-
-          if (!confirmed) {
-            exportLoading.value = false;
-            return;
-          }
-        }
-
-        AppLogger.info('开始导出Excel数据');
-
-        const response = await apiClient.get('/orders/export/', {
-          params: params,
-          responseType: 'blob',
-          timeout: 60000
-        });
-
-        const contentDisposition = response.headers['content-disposition'];
-        let filename = '订单数据.xlsx';
-
-        if (contentDisposition) {
-          const match = contentDisposition.match(/filename="(.+)"/);
-          if (match) {
-            filename = decodeURIComponent(match[1]);
-          }
-        }
-
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        ElMessage.success(`导出成功！文件 "${filename}" 已开始下载`);
-        AppLogger.info('Excel导出成功:', filename);
-
-      } catch (error) {
-        AppLogger.error('导出Excel失败:', error);
-        ElMessage.error('导出失败，请重试');
-      } finally {
-        exportLoading.value = false;
+      // ... (前面的 params 构建代码保持不变) ...
+      const params = new URLSearchParams();
+      if (searchKeyword.value) {
+        params.append('keyword', searchKeyword.value);
       }
-    };
+
+      if (dateRange.value && dateRange.value.length === 2) {
+        const [start, end] = dateRange.value;
+        params.append('start_date', formatDateForExport(start));
+        params.append('end_date', formatDateForExport(end));
+      }
+
+      if (total.value > 1000) {
+        // ... (数量过大的确认提示代码保持不变) ...
+        const confirmed = await ElMessageBox.confirm(
+          `当前筛选结果有 ${total.value} 条数据，导出可能需要较长时间。是否继续？`,
+          '提示',
+          { type: 'warning', confirmButtonText: '继续导出', cancelButtonText: '取消' }
+        );
+        if (!confirmed) { exportLoading.value = false; return; }
+      }
+
+      AppLogger.info('开始导出Excel数据');
+
+      const response = await apiClient.get('/orders/export/', {
+        params: params,
+        responseType: 'blob',
+        timeout: 60000
+      });
+
+      // --- 👇 修改开始：生成带时间戳的文件名 👇 ---
+      
+      // 1. 生成时间戳: YYYYMMDDHHmm (例如 202601281259)
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const timestamp = `${year}${month}${day}${hours}${minutes}`;
+
+      // 2. 构造文件名
+      let filename = `订单数据_${timestamp}.xlsx`;
+
+ 
+      const contentDisposition = response.headers['content-disposition'];
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) {
+          // 如果后端文件名也是 '订单数据.xlsx'，这里可以做替换
+          let serverName = decodeURIComponent(match[1]);
+          filename = serverName.replace('.xlsx', `_${timestamp}.xlsx`);
+        }
+      } 
+   
+
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      ElMessage.success(`导出成功！文件 "${filename}" 已开始下载`);
+      AppLogger.info('Excel导出成功:', filename);
+
+    } catch (error) {
+      AppLogger.error('导出Excel失败:', error);
+      ElMessage.error('导出失败，请重试');
+    } finally {
+      exportLoading.value = false;
+    }
+  };
 
     // ==================== 图片处理 ====================
     const handleImageLoad = (event) => {

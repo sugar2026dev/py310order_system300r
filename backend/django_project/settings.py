@@ -92,7 +92,7 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'zh-hans'
 TIME_ZONE = 'Asia/Shanghai'
 USE_I18N = True
-USE_TZ = True
+USE_TZ = False
 
 # ========== 静态文件配置 ==========
 # Django 管理后台静态文件路径

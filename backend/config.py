@@ -24,3 +24,11 @@ OCR_CONFIG = {
     'tesseract_config': '--psm 6 --oem 3',
     'min_dimension': 1200
 }
+
+# 百度 OCR 配置
+BAIDU_API_KEY = "uvgL3QE0cyIDG5qowfnOR4JS"
+BAIDU_SECRET_KEY = "BwP1QfCKrbFfSki7uqiaFh4EItu0ONHZ"
+
+# OCR 接口相关配置
+MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp'}

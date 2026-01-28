@@ -843,51 +843,61 @@ def order_detail(request, order_id):
             'data': None
         })
 
-
 @csrf_exempt
 @login_required
 @require_http_methods(["POST"])
 def add_order(request):
-    """添加订单"""
+    """
+    添加/上传订单接口
+    统一处理：无论是OCR识别后提交，还是人工录入，都走此接口
+    """
     try:
+        # 1. 获取请求数据
         data = json.loads(request.body)
+        current_user = request.user.username
+        
+        # 如果前端传了 upload_user 用前端的，否则用当前登录用户
+        upload_user = data.get('upload_user') or current_user
 
-        print(f"📥 [ADD_ORDER] 收到添加订单请求")
+        print(f"\n📥 [ADD_ORDER] 收到请求 - 用户: {upload_user}")
+    
+        # 2. 验证必要字段
+   
+        if not data.get('order_code'):
+            print("❌ [ADD_ORDER] 缺少订单编号")
+            return JsonResponse({'code': 400, 'msg': '必须填写订单编号'})
 
-        # 验证必要字段
-        required_fields = ['order_code', 'upload_user', 'product_name']
-        for field in required_fields:
-            if not data.get(field):
-                return JsonResponse({
-                    'code': 400,
-                    'msg': f'缺少必要字段: {field}'
-                })
-
-        # 获取图片路径
+        # 3. 处理图片路径
         img_path = data.get('img_path', '')
         img_filename = data.get('img_filename', '')
 
-        # 如果是完整的HTTP URL，转换为相对路径
+        # 路径清洗逻辑：如果是全路径 URL，提取相对路径
         if img_path and img_path.startswith('http'):
-            import re
+            # 尝试匹配 /media/ 之后的部分
             match = re.search(r'/media/(.+)$', img_path)
             if match:
+                img_path = f'order_images/{match.group(1)}' # 修正：通常数据库存相对于 MEDIA_ROOT 的路径
+    
                 img_path = f'/media/{match.group(1)}'
             else:
-                img_filename = img_path.split('/')[-1]
+                # 如果解析失败，使用默认结构
+                img_filename = img_filename or f"{data['order_code']}.jpg"
                 img_path = f'/media/order_images/{img_filename}'
+        
+        print(f"🖼️ [ADD_ORDER] 图片路径处理: {img_path}")
 
-        # 构建 extracted_data
-        extracted_data = {
+        # 4. 构建 extracted_data (核心映射)
+  
+        extracted_map = {
             '订单编号': data.get('order_code', ''),
             '商品名称': data.get('product_name', ''),
-            '商品规格': data.get('specification', ''),
+            '商品规格': data.get('specification', ''),  # 对应 OCR 的 '商品规格'
             '商品价格': data.get('product_price', ''),
-            '支付方式': data.get('payment_method', ''),
             '实付金额': data.get('actual_amount', ''),
+            '支付方式': data.get('payment_method', ''),
             '物流公司': data.get('logistics_company', ''),
             '快递单号': data.get('tracking_number', ''),
-            '订单状态': data.get('order_status', '待付款'),
+            '订单状态': data.get('order_status', ''),
             '收件人': data.get('receiver', ''),
             '联系方式': data.get('contact', ''),
             '收货地址': data.get('shipping_address', ''),
@@ -897,48 +907,49 @@ def add_order(request):
             '发货时间': data.get('ship_time', '')
         }
 
-        # 移除空值
-        extracted_data = {k: v for k, v in extracted_data.items() if v}
+        # 清理空值 (可选，保留空字符串通常更安全，避免前端读取报错)
+        # extracted_data = {k: str(v).strip() for k, v in extracted_map.items()}
+   
+        #extracted_data = {k: str(v).strip() for k, v in extracted_map.items() if v is not None and str(v).strip() != ''}
+        extracted_data = {k: str(v).strip() for k, v in extracted_map.items()}
 
-        # 检查订单是否已存在
-        existing_order = Order.objects.filter(order_code=data['order_code']).first()
-        if existing_order:
+
+        # 5. 查重逻辑
+        order_code = data['order_code']
+        if Order.objects.filter(order_code=order_code).exists():
+            print(f"⚠️ [ADD_ORDER] 订单已存在: {order_code}")
             return JsonResponse({
-                'code': 409,
-                'msg': f'订单编号 {data["order_code"]} 已存在',
-                'data': None
+                'code': 409, 
+                'msg': f'订单编号 {order_code} 已存在，请勿重复添加'
             })
 
-        # 创建订单记录
+        # 6. 创建数据库记录
         order = Order.objects.create(
-            order_code=data['order_code'],
-            upload_user=data['upload_user'],
+            order_code=order_code,
+            upload_user=upload_user,
             img_path=img_path,
             img_filename=img_filename,
             extracted_data=extracted_data
         )
 
-        print(f"✅ [ADD_ORDER] 订单保存成功 - ID: {order.id}")
+        print(f"✅ [ADD_ORDER] 保存成功 ID: {order.id}, 单号: {order_code}")
 
         return JsonResponse({
             'code': 200,
-            'msg': '添加成功',
+            'msg': '订单添加成功',
             'data': {
                 'id': order.id,
-                'order_code': order.order_code,
-                'img_path': img_path,
-                'img_filename': img_filename
+                'order_code': order.order_code
             }
         })
 
+    except json.JSONDecodeError:
+        print("❌ [ADD_ORDER] JSON 解析失败")
+        return JsonResponse({'code': 400, 'msg': '无效的 JSON 数据'})
     except Exception as e:
-        print(f"❌ [ADD_ORDER] 保存订单失败: {str(e)}")
-        import traceback
+        print(f"❌ [ADD_ORDER] 系统异常: {str(e)}")
         traceback.print_exc()
-        return JsonResponse({
-            'code': 500,
-            'msg': f'保存失败: {str(e)}'
-        })
+        return JsonResponse({'code': 500, 'msg': f'服务器内部错误: {str(e)}'})
 
 
 @csrf_exempt
@@ -1404,9 +1415,12 @@ def export_orders_excel(request):
 
         # 创建Excel文件
         output = io.BytesIO()
-
+        # 生成文件名
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = '订单数据'
+        mysheet_name = filename+timestamp
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, sheet_name='订单数据', index=False)
+            df.to_excel(writer, sheet_name=mysheet_name, index=False)
             worksheet = writer.sheets['订单数据']
 
             # 设置列宽
@@ -1449,7 +1463,8 @@ def export_orders_excel(request):
         return response
 
     except Exception as e:
-        print(f"❌ [EXPORT] 导出失败: {e}")
+        #print(f"❌ [EXPORT] 导出失败: {e}")
+        pass
         return JsonResponse({
             'code': 500,
             'msg': f'导出失败: {str(e)}',
